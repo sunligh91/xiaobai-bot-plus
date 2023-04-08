@@ -1,5 +1,14 @@
-# xiaobai-bot
- QQ机器人小白喵~~
+# xiaobai-bot-plus
+
+原作者停更，此为个人更新版本
+
+
+
+
+
+
+以下为原作者read.me
+ QQ机器人小白喵的
 
  [官网](https://nyanyadance.com/)
 
