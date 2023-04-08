@@ -10,7 +10,7 @@ import math
 import asyncio
 import traceback
 
-url = 'https://api.lolicon.app/setu/?apikey={}{}{}&proxy=disable'
+url = 'https://api.lolicon.app/setu/v2?r18=2{}{}'
 header = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.101 Safari/537.36 Edg/91.0.864.48"
 }
@@ -136,7 +136,7 @@ async def sendSetu(event, bot, CQparse, g):
         logger.update({event.group_id: {'time': now}})
         logger[event.group_id].update({event.user_id: now})
     else:
-        if logger[event.group_id]['time'] + g[7] > now:
+        if logger[event.group_id]['time']> now:
             await bot.send(event, '咱刚刚在这里发过色图了喵！', at_sender = True)
             gstat[event.group_id] = 0
             return True
@@ -146,7 +146,7 @@ async def sendSetu(event, bot, CQparse, g):
                 logger[event.group_id].update({event.user_id: now})
                 logger[event.group_id]['time'] = now
             else:
-                if logger[event.group_id][event.user_id] + g[6] > now:
+                if logger[event.group_id][event.user_id] > now:
                     await bot.send(event, '你才找咱发过色图喵。不能整天看色图，要休息休息喵！', at_sender = True)
                     gstat[event.group_id] = 0
                     return True
@@ -155,10 +155,8 @@ async def sendSetu(event, bot, CQparse, g):
                     upt = logger[event.group_id][event.user_id]
                     logger[event.group_id]['time'] = now
                     logger[event.group_id][event.user_id] = now
-
-
     
-    response = await request(url.format(apikey, keyword, tri), header)
+    response = await request(url.format(keyword, tri), header)
     if not response:
         logger[event.group_id]['time'] = gpt
         logger[event.group_id][event.user_id] = upt
@@ -168,37 +166,19 @@ async def sendSetu(event, bot, CQparse, g):
 
     data = response.json()
     
-    if data['code'] == -1:
+    if len(data['error']) != 0:
         logger[event.group_id]['time'] = gpt
         logger[event.group_id][event.user_id] = upt
         await bot.send(event, '唔……色图搜索失败了喵，咱也不知道哪里出错了喵……', at_sender = True)
         gstat[event.group_id] = 0
         return True
-    elif data['code'] == 401:
-        logger[event.group_id]['time'] = gpt
-        logger[event.group_id][event.user_id] = upt
-        await bot.send(event, '搜索色图的APIKEY有问题喵，咱建议你找咱的爸爸反馈一下喵！', at_sender = True)
-        gstat[event.group_id] = 0
-        return True
-    elif data['code'] == 403:
-        logger[event.group_id]['time'] = gpt
-        logger[event.group_id][event.user_id] = upt
-        await bot.send(event, '咱搜索色图的时候好像出了一点点问题喵……建议找爸爸反馈一下喵！', at_sender = True)
-        gstat[event.group_id] = 0
-        return True
-    elif data['code'] == 404:
+    elif len(data['data']) == 0:
         logger[event.group_id]['time'] = gpt
         logger[event.group_id][event.user_id] = upt
         await bot.send(event, '咱找不到相关的色图喵……换一个关键词咱可能就能找到了喵！', at_sender = True)
         gstat[event.group_id] = 0
         return True
-    elif data['code'] == 429:
-        logger[event.group_id]['time'] = gpt
-        logger[event.group_id][event.user_id] = upt
-        await bot.send(event, '色图搜索次数用完了喵。再过{}秒之后，就能再次搜索色图了喵！'.format(data['quota_min_ttl']), at_sender = True)
-        gstat[event.group_id] = 0
-        return True
-
+        
     async def sendMsg(bot, event, msg):
         tr = 0
         while tr < 3:
@@ -221,7 +201,7 @@ async def sendSetu(event, bot, CQparse, g):
         for d in data['data']:
             await bot.send(event, '图{}发射ing喵...\n画师：{} 作品ID：{}'.format(c+1, d['author'], d['pid']), at_sender = True)
             c += 1
-            pic = await getSetu(d['url'], g[4], CQparse)
+            pic = await getSetu(d['urls']['original'], g[4], CQparse)
             if not pic:
                 await bot.send(event, '图{}获取失败了喵QAQ'.format(c), at_sender = True)
                 continue
@@ -234,7 +214,7 @@ async def sendSetu(event, bot, CQparse, g):
     elif se:
         d = data['data'][0]
         await bot.send(event, '色图发射ing喵...\n画师：{} 作品ID：{}'.format(d['author'], d['pid']), at_sender = True)
-        pic = await getSetu(d['url'], g[4], CQparse)
+        pic = await getSetu(d['urls']['original'], g[4], CQparse)
         if not pic:
             logger[event.group_id]['time'] = gpt
             logger[event.group_id][event.user_id] = upt
